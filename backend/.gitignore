@@ -1,0 +1,37 @@
+/target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+/build/
+.gradle/
+
+### VS Code ###
+.vscode/
+
+/dbflute_howlingwolfdb/log/
+/dbflute_howlingwolfdb/output/doc/history-howlingwolfdb.html
+/dbflute_howlingwolfdb/output/doc/schema-howlingwolfdb.html
+/dbflute_howlingwolfdb/schema/project-history-howlingwolfdb.diffmap
+
+### Claude ###
+.claude/settings.local.json
