@@ -1,0 +1,11 @@
+{
+  "emmet.includeLanguages": {
+    "vue-html": "html"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.formatOnSave": true,
+  "vetur.validation.template": false,
+  "vue3snippets.enable-compile-vue-file-on-did-save-code": false
+}
