@@ -3,16 +3,21 @@ name: delivery_oracle
 on:
   push:
     branches:
-      - master
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy.yml'
+
+defaults:
+  run:
+    working-directory: backend
 
 jobs:
   delivery:
-    runs-on: [ self-hosted ]
+    runs-on: [self-hosted]
     steps:
       - name: clone repository
-        uses: actions/checkout@v2
-        with:
-          ref: master
+        uses: actions/checkout@v4
 
       - name: download arm64 JDK 21
         run: |
@@ -20,7 +25,7 @@ jobs:
           wget -O $RUNNER_TEMP/java_package.tar.gz $download_url
 
       - name: set up JDK 21
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           distribution: 'jdkfile'
           jdkFile: ${{ runner.temp }}/java_package.tar.gz
@@ -28,8 +33,7 @@ jobs:
           architecture: arm64
 
       - name: build
-        run: |
-          ./gradlew jibDockerBuild
+        run: ./gradlew jibDockerBuild
 
       - name: deploy
         run: |
@@ -37,5 +41,4 @@ jobs:
           docker push ghcr.io/h-orito/howling-wolf
 
       - name: release
-        run: |
-          kubectl delete pod -l app=howling-wolf
+        run: kubectl rollout restart deployment/howling-wolf
