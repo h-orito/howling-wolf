@@ -19,3 +19,4 @@ Thumbs.db
 
 # Serena cache
 .serena/
+bin/
