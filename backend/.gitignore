@@ -33,5 +33,9 @@
 /dbflute_howlingwolfdb/output/doc/schema-howlingwolfdb.html
 /dbflute_howlingwolfdb/schema/project-history-howlingwolfdb.diffmap
 
+### Env ###
+.env
+!.env.example
+
 ### Claude ###
 .claude/settings.local.json
