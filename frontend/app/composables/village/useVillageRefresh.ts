@@ -1,4 +1,5 @@
 import type { VillageLatestView } from '~/lib/api/types'
+import { VILLAGE_STATUS } from '~/lib/api/village-status-constants'
 import { useVillage } from './useVillage'
 import { useMessage } from './useMessage'
 import { useSituation } from './useSituation'
@@ -12,6 +13,7 @@ import { useActionReset } from './action/useActionReset'
 export const useVillageRefresh = () => {
   const villageStore = useVillageStore()
   const {
+    village,
     loadVillage,
     villageId,
     latestDay,
@@ -53,6 +55,11 @@ export const useVillageRefresh = () => {
   }
 
   const handleNewMessage = async () => {
+    // プロローグ中は参加者の増減に対応するため村情報も更新する
+    if (village.value?.status.code === VILLAGE_STATUS.PROLOGUE) {
+      await loadVillage()
+    }
+
     if (!shouldAutoRefresh.value) return
     await loadMessages()
     villageStore.saveExistsNewMessages(false)

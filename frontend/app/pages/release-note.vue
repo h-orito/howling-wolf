@@ -5,6 +5,10 @@
       <div class="rounded-lg bg-white p-4 shadow">
         <ul class="list-disc space-y-1 pl-6 text-left text-sm">
           <li>
+            2026/06/19
+            プロローグ中に参加者が増えた場合、発言抽出の対象に自動追加されるよう改善
+          </li>
+          <li>
             2026/03/01 FIREWOLFに存在している以下の機能を移植
             <ul class="mt-1 ml-6 list-inside list-disc">
               <li>発言下書き自動保存機能を追加</li>
