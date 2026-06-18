@@ -24,6 +24,16 @@
     >
       <span :class="charSizeClass" v-html="silentTimeMessageHtml" />
     </Alert>
+
+    <!-- 自動退村警告メッセージ -->
+    <Alert
+      v-if="isDispAutoKickWarning"
+      :class="charSizeClass"
+      class="mb-1.5"
+      type="warning"
+    >
+      <span :class="charSizeClass" v-html="autoKickWarningMessageHtml" />
+    </Alert>
   </div>
 </template>
 
@@ -31,12 +41,14 @@
 import { VILLAGE_STATUS } from '~/lib/api/village-status-constants'
 import { useVillage } from '~/composables/village/useVillage'
 import { useMessage } from '~/composables/village/useMessage'
+import { useSituation } from '~/composables/village/useSituation'
 import { useUserSettings } from '~/composables/village/useUserSettings'
 import Alert from '~/components/ui/feedback/Alert.vue'
 
 // Composables
 const { village, latestDay, isCurrentVillageDayLatest } = useVillage()
 const { messages } = useMessage()
+const { situation } = useSituation()
 const { messageDisplay } = useUserSettings()
 
 // 村の状況メッセージ
@@ -210,6 +222,106 @@ const sayableTime = computed(() => {
   const hour = String(time.hour ?? 0).padStart(2, '0')
   const minute = String(time.minute ?? 0).padStart(2, '0')
   return `${hour}:${minute}`
+})
+
+// 自動退村警告メッセージ表示判定
+const isDispAutoKickWarning = computed(() => {
+  return isPrologue.value && myParticipantId.value !== null && !isSafeFromAutoKick.value
+})
+
+const isPrologue = computed(() => {
+  if (!village.value) return false
+  return village.value.status.code === VILLAGE_STATUS.PROLOGUE
+})
+
+const myParticipantId = computed((): number | null => {
+  return situation.value?.participate.myself?.id ?? null
+})
+
+const formatDateTime = (date: Date): string => {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  const h = String(date.getHours()).padStart(2, '0')
+  const min = String(date.getMinutes()).padStart(2, '0')
+  return `${y}/${m}/${d} ${h}:${min}`
+}
+
+const parseStartDatetime = (): Date | null => {
+  if (!village.value) return null
+  const str = village.value.setting.time.start_datetime
+  const parts = /^(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(
+    str
+  )
+  if (!parts) return null
+  const [, year, month, day, hour, minute, second] = parts
+  if (!year || !month || !day || !hour || !minute || !second) return null
+  return new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+    Number(second)
+  )
+}
+
+const MILLIS_HOUR = 60 * 60 * 1000
+const MILLIS_24H = 24 * MILLIS_HOUR
+const MILLIS_72H = 72 * MILLIS_HOUR
+const MILLIS_96H = 96 * MILLIS_HOUR
+const MILLIS_2H = 2 * MILLIS_HOUR
+
+const isSafeFromAutoKick = computed(() => {
+  if (!messages.value || myParticipantId.value === null || !village.value)
+    return false
+  const startDatetime = parseStartDatetime()
+  if (!startDatetime) return false
+  const latestMilli =
+    messages.value.latest_message_unix_time_milli_map[myParticipantId.value]
+  if (latestMilli == null) return false
+  return latestMilli + MILLIS_24H >= startDatetime.getTime() - MILLIS_2H
+})
+
+const autoKickWarningMessage = computed(() => {
+  if (!messages.value || myParticipantId.value === null || !village.value)
+    return ''
+
+  const startDatetime = parseStartDatetime()
+  if (!startDatetime) return ''
+
+  const startMillis = startDatetime.getTime()
+  const windowStart = startMillis - MILLIS_72H
+  const activeFrom = startMillis - MILLIS_96H
+
+  const now = Date.now()
+  if (now < activeFrom) {
+    const windowStartStr = formatDateTime(new Date(windowStart))
+    const activeFromStr = formatDateTime(new Date(activeFrom))
+    return (
+      `${windowStartStr}（開始72時間前）以降、24時間発言がない参加者は、自動で村を去ります。\n` +
+      `${activeFromStr}（96時間前）以降に通常発言することで、退村までの時間を24時間伸ばせます。`
+    )
+  }
+
+  const windowEnd = startMillis - MILLIS_2H
+  const latestMilli =
+    messages.value.latest_message_unix_time_milli_map[myParticipantId.value]
+  const deadlineFromMessage =
+    latestMilli != null ? latestMilli + MILLIS_24H : windowStart
+  const deadline = Math.min(
+    Math.max(deadlineFromMessage, windowStart),
+    windowEnd
+  )
+
+  return (
+    `${formatDateTime(new Date(deadline))}までに発言がない場合、あなたは自動で村を去ります。\n` +
+    `通常発言することで、退村までの時間を24時間伸ばせます。`
+  )
+})
+
+const autoKickWarningMessageHtml = computed(() => {
+  return autoKickWarningMessage.value.replace(/\n/g, '<br />')
 })
 
 // 文字サイズクラス

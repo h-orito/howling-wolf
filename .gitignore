@@ -20,3 +20,4 @@ Thumbs.db
 # Serena cache
 .serena/
 bin/
+.playwright-mcp

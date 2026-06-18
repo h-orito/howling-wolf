@@ -1161,6 +1161,9 @@ export interface components {
       today_message_count_map: {
         [key: string]: number
       }
+      latest_message_unix_time_milli_map: {
+        [key: string]: number | null
+      }
     }
     VillageListForm: {
       village_status?: string[]

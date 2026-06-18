@@ -1,7 +1,7 @@
-ignoredBuiltDependencies:
-  - '@firebase/util'
-  - '@parcel/watcher'
-  - esbuild
-  - protobufjs
-  - unrs-resolver
-  - vue-demi
+allowBuilds:
+  '@firebase/util': false
+  '@parcel/watcher': true
+  esbuild: true
+  protobufjs: true
+  unrs-resolver: true
+  vue-demi: false

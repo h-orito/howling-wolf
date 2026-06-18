@@ -4,7 +4,6 @@ import com.ort.howlingwolf.domain.model.charachip.Charas
 import com.ort.howlingwolf.domain.model.message.Messages
 import com.ort.howlingwolf.domain.model.player.Players
 import com.ort.howlingwolf.domain.model.village.Village
-
 data class MessagesView(
     val list: List<MessageView>,
     val allRecordCount: Int?,
@@ -13,7 +12,8 @@ data class MessagesView(
     val existNextPage: Boolean?,
     val currentPageNum: Int?,
     val isLatest: Boolean?,
-    val todayMessageCountMap: Map<Int, Int>
+    val todayMessageCountMap: Map<Int, Int>,
+    val latestMessageUnixTimeMilliMap: Map<Int, Long?>
 ) {
     constructor(
         messages: Messages,
@@ -37,13 +37,23 @@ data class MessagesView(
         existNextPage = messages.isExistNextPage,
         currentPageNum = messages.currentPageNum,
         isLatest = messages.isLatest,
-        todayMessageCountMap = convertToMessageCountMap(village, todayMessages)
+        todayMessageCountMap = convertToMessageCountMap(village, todayMessages),
+        latestMessageUnixTimeMilliMap = convertToLatestMessageUnixTimeMilliMap(village, todayMessages)
     )
 
     companion object {
         private fun convertToMessageCountMap(village: Village, todayMessages: Messages): Map<Int, Int> {
             return village.participant.memberList.map { member ->
                 member.id to todayMessages.list.count { it.fromVillageParticipantId == member.id }
+            }.toMap()
+        }
+
+        private fun convertToLatestMessageUnixTimeMilliMap(village: Village, todayMessages: Messages): Map<Int, Long?> {
+            return village.participant.memberList.map { member ->
+                member.id to todayMessages.list
+                    .filter { it.fromVillageParticipantId == member.id }
+                    .maxByOrNull { it.time.unixTimeMilli }
+                    ?.time?.unixTimeMilli
             }.toMap()
         }
     }
