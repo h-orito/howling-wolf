@@ -5,6 +5,14 @@ spring:
     password: ${HOWLING_WOLF_DB_PASSWORD}
     driverClassName: com.mysql.jdbc.Driver
     type: org.apache.tomcat.jdbc.pool.DataSource
+    tomcat:
+      # DB (wolf-db) は 1 コア相当・max_connections=200 を全アプリで共有するため、
+      # プール上限で DB への同時接続数に蓋をする（上限到達時はアプリ側で最大 max-wait 待つ）
+      max-active: 20
+      max-idle: 20
+      min-idle: 3
+      initial-size: 3
+      max-wait: 10000
   messages:
     basename: messages
     cache-duration: -1
