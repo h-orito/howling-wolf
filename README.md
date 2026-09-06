@@ -8,6 +8,7 @@
 howling-wolf/
 ├── frontend/  # Nuxt 4 (Vue 3) フロントエンド
 ├── backend/   # Kotlin / Spring Boot バックエンド
+├── admin-tool/ # 管理者向けローカル閲覧ツール (Nuxt 4、デプロイしない)
 └── e2e/       # Playwright E2E
 ```
 
@@ -30,6 +31,9 @@ cd frontend && pnpm install && pnpm dev
 
 # backend
 cd backend && ./gradlew bootRun
+
+# admin-tool (管理者向け。ローカル MySQL に直接接続)
+cd admin-tool && pnpm install && pnpm dev
 ```
 
 ## デプロイ
