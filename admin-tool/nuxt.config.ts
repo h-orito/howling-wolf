@@ -5,7 +5,9 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   devServer: {
     // frontend (3000) と衝突しないようにする
-    port: 3100
+    port: 3100,
+    // 本番 DB にもつなぐ管理ツールなので、自分の PC からだけ接続できるようにする
+    host: '127.0.0.1'
   },
   app: {
     head: {

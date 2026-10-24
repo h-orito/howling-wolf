@@ -35,6 +35,8 @@ pnpm install
 pnpm dev   # http://localhost:3100
 ```
 
+`127.0.0.1` でだけ待ち受ける。Host / Origin ヘッダーが localhost 以外のリクエストは 403 にする（`server/middleware/local-only.ts`）。別の端末から使う場合も、ポートを公開せず SSH のポートフォワードなどで localhost として接続する。
+
 ### 接続先の設定
 
 環境変数 (または `.env`) で指定する。既定値はリポジトリ直下 `docker-compose.yml` のローカル MySQL。
