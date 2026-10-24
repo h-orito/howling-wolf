@@ -15,6 +15,10 @@ data class MessageContent(
         const val defaultLengthMax = 400
         const val defaultLineMax: Int = 20
 
+        // 受け付ける発言本文の長さの上限 (UTF-16 単位)。文字数・行数の確認より前に、明らかに長すぎるものを弾く
+        // 最大 400 文字・40 行に改行や絵文字 (2 単位) を足しても収まる値にしている
+        const val inputLengthMax = 2000
+
         operator fun invoke(
             messageType: String,
             text: String,
@@ -35,11 +39,7 @@ data class MessageContent(
          * @param text
          * @return 4byte文字を除いた文字列
          */
-        private fun removeSurrogate(text: String): String {
-            return text.chunked(1).filter { c ->
-                !c.matches("[\\uD800-\\uDFFF]".toRegex())
-            }.joinToString(separator = "")
-        }
+        private fun removeSurrogate(text: String): String = text.filterNot { it.isSurrogate() }
     }
 
     fun assertMessageLength(maxLength: Int = defaultLengthMax, lineMax: Int = defaultLineMax) {
