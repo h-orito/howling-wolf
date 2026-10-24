@@ -86,20 +86,20 @@ class MessageService(
     /**
      * 発言登録
      *
-     * @param villageId villageId
+     * @param village village
      * @param message 発言内容
      */
-    fun registerSayMessage(villageId: Int, message: Message) = messageDataSource.registerMessage(villageId, message)
+    fun registerSayMessage(village: Village, message: Message) = messageDataSource.registerMessage(village, message)
 
     /**
      * 村作成時のシステムメッセージ登録
      * @param village village
      */
     fun registerInitialMessage(village: Village) =
-        messageDataSource.registerMessage(village.id, village.createVillagePrologueMessage())
+        messageDataSource.registerMessage(village, village.createVillagePrologueMessage())
 
     fun registerBeginnerMessage(village: Village) =
-        messageDataSource.registerMessage(village.id, village.createBeginnerVillageMessage())
+        messageDataSource.registerMessage(village, village.createBeginnerVillageMessage())
 
     /**
      * 村に参加する際の発言を登録
@@ -118,7 +118,7 @@ class MessageService(
     ) {
         // {N}人目、{キャラ名}。
         messageDataSource.registerMessage(
-            village.id,
+            village,
             participateDomainService.createParticipateMessage(village, chara, isSpectate)
         )
         // 参加発言
@@ -128,7 +128,7 @@ class MessageService(
             CDef.FaceType.通常.code()
         )
         messageDataSource.registerMessage(
-            village.id,
+            village,
             Message.createSayMessage(participant, village.day.prologueDay().id, messageContent)
         )
     }
@@ -140,7 +140,7 @@ class MessageService(
      */
     fun registerLeaveMessage(village: Village, chara: Chara) =
         messageDataSource.registerMessage(
-            village.id,
+            village,
             participateDomainService.createLeaveMessage(village, chara)
         )
 
@@ -162,7 +162,7 @@ class MessageService(
         val myChara: Chara = charas.chara(participant.charaId)
         val targetChara: Chara? = if (targetId == null) null else charas.chara(village.participant, targetId)
         val message: Message = abilityDomainService.createAbilitySetMessage(village, myChara, targetChara, abilityType)
-        messageDataSource.registerMessage(village.id, message)
+        messageDataSource.registerMessage(village, message)
     }
 
     /**
@@ -174,25 +174,25 @@ class MessageService(
      */
     fun registerCommitMessage(village: Village, chara: Chara, doCommit: Boolean) {
         messageDataSource.registerMessage(
-            village.id,
+            village,
             commitDomainService.createCommitMessage(chara, doCommit, village.day.latestDay().id)
         )
     }
 
     fun registerComingOutMessage(village: Village, chara: Chara, skills: Skills) {
         messageDataSource.registerMessage(
-            village.id,
+            village,
             comingOutDomainService.createComingOutMessage(chara, skills, village.day.latestDay().id)
         )
     }
 
     /**
      * 差分更新
-     * @param villageId villageId
+     * @param village village
      * @param before messages
      * @param after messages
      */
-    fun updateDifference(villageId: Int, before: Messages, after: Messages) {
-        messageDataSource.updateDifference(villageId, before, after)
+    fun updateDifference(village: Village, before: Messages, after: Messages) {
+        messageDataSource.updateDifference(village, before, after)
     }
 }
