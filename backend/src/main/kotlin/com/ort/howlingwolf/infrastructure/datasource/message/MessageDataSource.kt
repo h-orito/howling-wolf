@@ -12,7 +12,9 @@ import com.ort.howlingwolf.domain.model.message.MessageQuery
 import com.ort.howlingwolf.domain.model.message.MessageTime
 import com.ort.howlingwolf.domain.model.message.MessageType
 import com.ort.howlingwolf.domain.model.message.Messages
+import com.ort.howlingwolf.domain.model.village.Village
 import com.ort.howlingwolf.domain.model.village.participant.VillageParticipant
+import com.ort.howlingwolf.domain.service.message.MessageDomainService
 import com.ort.howlingwolf.fw.HowlingWolfDateUtil
 import com.ort.howlingwolf.fw.exception.HowlingWolfBusinessException
 import org.dbflute.cbean.result.PagingResultBean
@@ -25,6 +27,7 @@ import java.util.regex.Pattern
 class MessageDataSource(
     val messageBhv: MessageBhv,
     private val messageSendtoBhv: MessageSendtoBhv,
+    private val messageDomainService: MessageDomainService,
 ) {
 
     // ===================================================================================
@@ -165,7 +168,8 @@ class MessageDataSource(
         return messageList.groupBy { CDef.MessageType.codeOf(it.messageTypeCode) }.mapValues { it.value.size }
     }
 
-    fun registerMessage(villageId: Int, message: com.ort.howlingwolf.domain.model.message.Message) {
+    fun registerMessage(village: Village, message: com.ort.howlingwolf.domain.model.message.Message) {
+        val villageId = village.id
         val mes = Message()
         val messageTypeCode = message.content.type.code
         mes.villageId = villageId
@@ -197,7 +201,7 @@ class MessageDataSource(
             try {
                 mes.messageNumber = selectNextMessageNumber(villageId, message.content.type.code)
                 messageBhv.insert(mes)
-                insertMessageSendTo(mes)
+                insertMessageSendTo(village, message, mes)
                 return
             } catch (e: RuntimeException) {
                 logger.error(e.message, e)
@@ -206,10 +210,18 @@ class MessageDataSource(
         throw HowlingWolfBusinessException("混み合っているため発言に失敗しました。再度発言してください。")
     }
 
-    private fun insertMessageSendTo(m: Message) {
+    private fun insertMessageSendTo(
+        village: Village,
+        message: com.ort.howlingwolf.domain.model.message.Message,
+        m: Message
+    ) {
         val splitted = m.messageContent.split(">>")
         if (splitted.size <= 1) {
             return  // >>が含まれていない
+        }
+        // 見学者も含めて発言者を探す。見つからなければ発言者なし (誰でも見られる種別だけ記録する) として扱う
+        val sender = message.fromVillageParticipantId?.let { id ->
+            (village.participant.memberList + village.spectator.memberList).firstOrNull { it.id == id }
         }
         splitted.drop(1).forEach { str ->
             patternMessageTypeMap.forEach { (pattern: Pattern, messageType: CDef.MessageType) ->
@@ -223,6 +235,10 @@ class MessageDataSource(
                             it.query().setMessageNumber_Equal(number)
                         }
                     if (!optMessage.isPresent || optMessage.get().villagePlayerId == null) {
+                        return@forEach
+                    }
+                    // 発言者が見られる発言へのアンカーだけを、発言の宛先として記録する
+                    if (!messageDomainService.isAnchorableMessage(village, sender, messageType, optMessage.get().villagePlayerId)) {
                         return@forEach
                     }
                     val sendTo = MessageSendto()
@@ -251,10 +267,10 @@ class MessageDataSource(
      * @param before messages
      * @param after messages
      */
-    fun updateDifference(villageId: Int, before: Messages, after: Messages) {
+    fun updateDifference(village: Village, before: Messages, after: Messages) {
         // 追加しかないのでbeforeにないindexから追加していく
         after.list.drop(before.list.size).forEach {
-            registerMessage(villageId, it)
+            registerMessage(village, it)
         }
     }
 

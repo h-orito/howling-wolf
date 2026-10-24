@@ -365,7 +365,7 @@ class VillageCoordinator(
         val myself: VillageParticipant = findParticipant(village, user)!!
         val toParticipant: VillageParticipant? = targetId?.let { village.participant.member(targetId) }
         val message: Message = Message.createSayMessage(myself, village.day.latestDay().id, messageContent, toParticipant)
-        messageService.registerSayMessage(villageId, message)
+        messageService.registerSayMessage(village, message)
         // 特定の文字列が含まれていたら通知
         if (messageText.contains("@国主") || messageText.contains("＠国主")) {
             slackRepository.postToSlack(villageId, messageText)
