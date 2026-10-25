@@ -232,7 +232,7 @@ class VillageCoordinator(
     ) {
         // 同時に参加されても定員・1 人 1 席・キャラの重複を守れるよう、村の行をロックしてから最新の状態で確認し直す
         villageService.lockVillage(villageId)
-        var village: Village = villageService.findVillage(villageId)
+        val village: Village = villageService.findVillage(villageId)
         participateDomainService.assertParticipateCapacity(
             player = playerService.findPlayer(playerId),
             village = village,
@@ -240,6 +240,40 @@ class VillageCoordinator(
             isSpectate = isSpectate,
             charachipCharaNum = charachipService.findCharas(village.setting.charachip.charachipId).list.size
         )
+        registerParticipant(village, playerId, charaId, message, isSpectate, firstRequestSkill, secondRequestSkill, accessInfo)
+    }
+
+    /**
+     * 参加条件を確認せずに村に参加させる (ダミーキャラとデバッグ用)
+     * ダミーのプレイヤーは全ての村に参加しているので、プレイヤーとしての参加条件 (進行中の村に参加していない) を満たさない
+     */
+    @Transactional(rollbackFor = [Exception::class, HowlingWolfBusinessException::class])
+    fun participateWithoutCheck(
+        villageId: Int,
+        playerId: Int,
+        charaId: Int,
+        message: String,
+        isSpectate: Boolean,
+        firstRequestSkill: CDef.Skill = CDef.Skill.おまかせ,
+        secondRequestSkill: CDef.Skill = CDef.Skill.おまかせ,
+        accessInfo: AccessInfo
+    ) {
+        val village: Village = villageService.findVillage(villageId)
+        registerParticipant(village, playerId, charaId, message, isSpectate, firstRequestSkill, secondRequestSkill, accessInfo)
+    }
+
+    private fun registerParticipant(
+        before: Village,
+        playerId: Int,
+        charaId: Int,
+        message: String,
+        isSpectate: Boolean,
+        firstRequestSkill: CDef.Skill,
+        secondRequestSkill: CDef.Skill,
+        accessInfo: AccessInfo
+    ) {
+        val villageId = before.id
+        var village: Village = before
         // 村参加者登録
         val changedVillage: Village = village.participate(
             playerId = playerId,
@@ -540,7 +574,7 @@ class VillageCoordinator(
     private fun participateDummyChara(villageId: Int, village: Village, dummyChara: Chara) {
         val dummyPlayerId = 1 // 固定
         val message: String = dummyChara.defaultMessage.joinMessage ?: "人狼なんているわけないじゃん。みんな大げさだなあ"
-        this.participate(
+        this.participateWithoutCheck(
             villageId = villageId,
             playerId = dummyPlayerId,
             charaId = village.setting.charachip.dummyCharaId,
