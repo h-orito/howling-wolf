@@ -87,7 +87,7 @@ class DebugController(
             val randomSkill = village.setting.organizations.allRequestableSkillList().shuffled().first()
             val randomSkill2 = village.setting.organizations.allRequestableSkillList().shuffled().first()
             // 入村
-            villageCoordinator.participate(
+            villageCoordinator.participateWithoutCheck(
                 villageId = villageId,
                 playerId = playerId,
                 charaId = chara.charaId,
