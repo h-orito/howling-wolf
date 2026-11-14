@@ -6,6 +6,7 @@ import com.ort.howlingwolf.application.service.AutogenerateVillageService
 import com.ort.howlingwolf.application.service.CharachipService
 import com.ort.howlingwolf.application.service.ComingOutService
 import com.ort.howlingwolf.application.service.CommitService
+import com.ort.howlingwolf.application.service.DeveloperNotificationService
 import com.ort.howlingwolf.application.service.MessageService
 import com.ort.howlingwolf.application.service.PlayerService
 import com.ort.howlingwolf.application.service.VillageService
@@ -40,8 +41,6 @@ import com.ort.howlingwolf.domain.service.vote.VoteDomainService
 import com.ort.howlingwolf.fw.HowlingWolfDateUtil
 import com.ort.howlingwolf.fw.exception.HowlingWolfBusinessException
 import com.ort.howlingwolf.fw.security.HowlingWolfUser
-import com.ort.howlingwolf.infrastructure.repository.DiscordRepository
-import com.ort.howlingwolf.infrastructure.repository.SlackRepository
 import com.ort.howlingwolf.infrastructure.repository.TweetRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -62,8 +61,7 @@ class VillageCoordinator(
     private val comingOutService: ComingOutService,
     private val autogenerateVillageService: AutogenerateVillageService,
     private val tweetRepository: TweetRepository,
-    private val slackRepository: SlackRepository,
-    private val discordRepository: DiscordRepository,
+    private val developerNotificationService: DeveloperNotificationService,
     // domain service
     private val participateDomainService: ParticipateDomainService,
     private val skillRequestDomainService: SkillRequestDomainService,
@@ -302,11 +300,7 @@ class VillageCoordinator(
             .flatMap { it.accessInfos }
             .any { a -> a.ipAddress == ipAddress || a.clientToken == clientToken }
         if (isContain) {
-            slackRepository.postToSlack(
-                villageId,
-                "IPアドレス/クライアントトークン重複検出: IP: $ipAddress, Token: $clientToken"
-            )
-            discordRepository.post(
+            developerNotificationService.notifyAfterCommit(
                 villageId,
                 "IPアドレス/クライアントトークン重複検出: IP: $ipAddress, Token: $clientToken"
             )
@@ -411,8 +405,7 @@ class VillageCoordinator(
         messageService.registerSayMessage(village, message)
         // 特定の文字列が含まれていたら通知
         if (messageText.contains("@国主") || messageText.contains("＠国主")) {
-            slackRepository.postToSlack(villageId, messageText)
-            discordRepository.post(villageId, messageText)
+            developerNotificationService.notifyAfterCommit(villageId, messageText)
         }
         // IPアドレス更新
         val ipAddress = user.ipAddress!!
@@ -426,11 +419,7 @@ class VillageCoordinator(
             .flatMap { it.accessInfos }
             .any { a -> a.ipAddress == ipAddress || a.clientToken == clientToken }
         if (isContain) {
-            slackRepository.postToSlack(
-                villageId,
-                "IPアドレス/クライアントトークン重複検出: IP: $ipAddress, Token: $clientToken"
-            )
-            discordRepository.post(
+            developerNotificationService.notifyAfterCommit(
                 villageId,
                 "IPアドレス/クライアントトークン重複検出: IP: $ipAddress, Token: $clientToken"
             )
