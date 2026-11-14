@@ -50,8 +50,6 @@ dependencies {
     implementation("com.google.firebase:firebase-admin:9.1.1")
     // twitter
     implementation("io.github.redouane59.twitter:twittered:2.13")
-    // slack
-    implementation("com.slack.api:slack-api-client:1.4.0")
     // dotenv (load .env into Spring property sources for local development)
     implementation("me.paulschwarz:springboot3-dotenv:5.1.0")
 

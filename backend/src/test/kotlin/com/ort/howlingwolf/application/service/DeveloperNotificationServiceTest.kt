@@ -9,7 +9,6 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import com.ort.howlingwolf.infrastructure.repository.DiscordRepository
-import com.ort.howlingwolf.infrastructure.repository.SlackRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -42,22 +41,17 @@ class DeveloperNotificationServiceTest {
         fun transactionManager(): PlatformTransactionManager = FakeTransactionManager()
 
         @Bean
-        fun slackRepository(): SlackRepository = mock()
-
-        @Bean
         fun discordRepository(): DiscordRepository = mock()
 
         @Bean
         fun developerNotificationService(
             eventPublisher: ApplicationEventPublisher,
-            slackRepository: SlackRepository,
             discordRepository: DiscordRepository
-        ) = DeveloperNotificationService(eventPublisher, slackRepository, discordRepository)
+        ) = DeveloperNotificationService(eventPublisher, discordRepository)
     }
 
     private lateinit var context: AnnotationConfigApplicationContext
     private lateinit var service: DeveloperNotificationService
-    private lateinit var slackRepository: SlackRepository
     private lateinit var discordRepository: DiscordRepository
     private lateinit var transactionTemplate: TransactionTemplate
 
@@ -65,10 +59,9 @@ class DeveloperNotificationServiceTest {
     fun setUp() {
         context = AnnotationConfigApplicationContext(Config::class.java)
         service = context.getBean(DeveloperNotificationService::class.java)
-        slackRepository = context.getBean(SlackRepository::class.java)
         discordRepository = context.getBean(DiscordRepository::class.java)
         transactionTemplate = TransactionTemplate(context.getBean(PlatformTransactionManager::class.java))
-        reset(slackRepository, discordRepository)
+        reset(discordRepository)
     }
 
     @AfterEach
@@ -77,14 +70,12 @@ class DeveloperNotificationServiceTest {
     }
 
     @Test
-    @DisplayName("トランザクション中は送らず、commit 後に Slack と Discord へ送る")
+    @DisplayName("トランザクション中は送らず、commit 後に Discord へ送る")
     fun sendAfterCommit() {
         transactionTemplate.executeWithoutResult {
             service.notifyAfterCommit(10, "重複検出")
-            verify(slackRepository, never()).postToSlack(any(), any())
             verify(discordRepository, never()).post(any(), any())
         }
-        verify(slackRepository).postToSlack(10, "重複検出")
         verify(discordRepository).post(10, "重複検出")
     }
 
@@ -95,21 +86,20 @@ class DeveloperNotificationServiceTest {
             service.notifyAfterCommit(10, "重複検出")
             status.setRollbackOnly()
         }
-        verifyNoMoreInteractions(slackRepository, discordRepository)
+        verifyNoMoreInteractions(discordRepository)
     }
 
     @Test
     @DisplayName("トランザクションの外から呼ばれたらその場で送る")
     fun sendWithoutTransaction() {
         service.notifyAfterCommit(10, "重複検出")
-        verify(slackRepository).postToSlack(10, "重複検出")
         verify(discordRepository).post(10, "重複検出")
     }
 
     @Test
-    @DisplayName("Slack への送信に失敗しても Discord へは送り、呼び出し元に例外を投げない")
-    fun slackFailureDoesNotStopDiscord() {
-        doThrow(RuntimeException("slack error")).whenever(slackRepository).postToSlack(any(), any())
+    @DisplayName("Discord への送信に失敗しても呼び出し元に例外を投げない")
+    fun discordFailureDoesNotThrow() {
+        doThrow(RuntimeException("discord error")).whenever(discordRepository).post(any(), any())
         transactionTemplate.executeWithoutResult {
             service.notifyAfterCommit(10, "重複検出")
         }

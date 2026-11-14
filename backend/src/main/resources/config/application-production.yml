@@ -52,7 +52,6 @@ logging:
     root: INFO
     org.seasar.dbflute: ERROR
   file.name: /app/logs/howling-wolf.log
-slack.token: ${SLACK_TOKEN}
 twitter:
   oauth:
     consumer-key: ${TWITTER_CONSUMER_KEY}

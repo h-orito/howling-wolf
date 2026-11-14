@@ -1,6 +1,5 @@
 package com.ort.howlingwolf.infrastructure.repository
 
-import com.slack.api.SlackConfig
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -34,15 +33,6 @@ class NotificationRepositoryTest {
     }
 
     @Test
-    @DisplayName("Slack: 制御記号をエスケープする")
-    fun slackEscape() {
-        assertEquals(
-            "&lt;!channel&gt; &lt;https://evil.example|偽&gt; A&amp;B",
-            SlackRepository.escape("<!channel> <https://evil.example|偽> A&B")
-        )
-    }
-
-    @Test
     @DisplayName("Discord: 接続 5 秒・読み取り 10 秒のタイムアウトを設定する")
     fun discordTimeout() {
         assertEquals(Duration.ofSeconds(5), DiscordRepository.CONNECT_TIMEOUT)
@@ -62,29 +52,6 @@ class NotificationRepositoryTest {
             val elapsed = Duration.ofNanos(System.nanoTime() - startedAt)
             assertTrue(e.cause is SocketTimeoutException, e.cause.toString())
             assertTrue(elapsed < Duration.ofSeconds(5), elapsed.toString())
-        }
-    }
-
-    @Test
-    @DisplayName("Slack: 接続 5 秒・読み取り 10 秒のタイムアウトを設定する")
-    fun slackTimeout() {
-        assertEquals(Duration.ofSeconds(5), SlackRepository.CONNECT_TIMEOUT)
-        assertEquals(Duration.ofSeconds(10), SlackRepository.READ_TIMEOUT)
-    }
-
-    @Test
-    @DisplayName("Slack: 応答が返ってこなければ読み取りのタイムアウトで打ち切る")
-    fun slackReadTimeout() {
-        // 接続は受け付けるが応答を返さないサーバー
-        ServerSocket(0).use { server ->
-            val config = SlackConfig().apply { methodsEndpointUrlPrefix = "http://127.0.0.1:${server.localPort}/api/" }
-            val slack = SlackRepository.createSlack(config, Duration.ofSeconds(5), Duration.ofMillis(300))
-            val startedAt = System.nanoTime()
-            val e = assertThrows(SocketTimeoutException::class.java) {
-                slack.methods("dummy-token").chatPostMessage { it.channel("test").text("test") }
-            }
-            val elapsed = Duration.ofNanos(System.nanoTime() - startedAt)
-            assertTrue(elapsed < Duration.ofSeconds(5), "$elapsed $e")
         }
     }
 }
