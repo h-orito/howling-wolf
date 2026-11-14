@@ -2,9 +2,15 @@ package com.ort.howlingwolf.infrastructure.repository
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
+import org.springframework.web.client.ResourceAccessException
+import java.net.ServerSocket
+import java.net.SocketTimeoutException
+import java.time.Duration
 
 class NotificationRepositoryTest {
     // RestTemplate の JSON 変換と同じ設定
@@ -27,11 +33,25 @@ class NotificationRepositoryTest {
     }
 
     @Test
-    @DisplayName("Slack: 制御記号をエスケープする")
-    fun slackEscape() {
-        assertEquals(
-            "&lt;!channel&gt; &lt;https://evil.example|偽&gt; A&amp;B",
-            SlackRepository.escape("<!channel> <https://evil.example|偽> A&B")
-        )
+    @DisplayName("Discord: 接続 5 秒・読み取り 10 秒のタイムアウトを設定する")
+    fun discordTimeout() {
+        assertEquals(Duration.ofSeconds(5), DiscordRepository.CONNECT_TIMEOUT)
+        assertEquals(Duration.ofSeconds(10), DiscordRepository.READ_TIMEOUT)
+    }
+
+    @Test
+    @DisplayName("Discord: 応答が返ってこなければ読み取りのタイムアウトで打ち切る")
+    fun discordReadTimeout() {
+        // 接続は受け付けるが応答を返さないサーバー
+        ServerSocket(0).use { server ->
+            val restTemplate = DiscordRepository.createRestTemplate(Duration.ofSeconds(5), Duration.ofMillis(300))
+            val startedAt = System.nanoTime()
+            val e = assertThrows(ResourceAccessException::class.java) {
+                restTemplate.postForObject("http://127.0.0.1:${server.localPort}/", "{}", String::class.java)
+            }
+            val elapsed = Duration.ofNanos(System.nanoTime() - startedAt)
+            assertTrue(e.cause is SocketTimeoutException, e.cause.toString())
+            assertTrue(elapsed < Duration.ofSeconds(5), elapsed.toString())
+        }
     }
 }

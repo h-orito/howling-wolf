@@ -8,14 +8,28 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
+import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.stereotype.Repository
 import org.springframework.web.client.RestTemplate
+import java.time.Duration
 
 @Repository
 class DiscordRepository {
 
     companion object {
         private val logger = LoggerFactory.getLogger(DiscordRepository::class.java)
+
+        // 応答が遅くても呼び出し元を長く待たせないよう、接続と読み取りにタイムアウトを設定する
+        internal val CONNECT_TIMEOUT: Duration = Duration.ofSeconds(5)
+        internal val READ_TIMEOUT: Duration = Duration.ofSeconds(10)
+
+        internal fun createRestTemplate(connectTimeout: Duration, readTimeout: Duration): RestTemplate =
+            RestTemplate(
+                SimpleClientHttpRequestFactory().apply {
+                    setConnectTimeout(connectTimeout)
+                    setReadTimeout(readTimeout)
+                }
+            )
 
         // Discord の書式・メンションの記号をエスケープし、ユーザーが入力した本文をそのまま表示させる
         private val markdownCharacters = setOf('\\', '*', '_', '~', '`', '|', '>', '<', '[', ']', '(', ')', '#', '-', '@', ':')
@@ -40,10 +54,11 @@ class DiscordRepository {
     @Value("\${discord.master-userid:}")
     private lateinit var masterUserId: String
 
+    private val restTemplate = createRestTemplate(CONNECT_TIMEOUT, READ_TIMEOUT)
+
     fun post(villageId: Int, message: String) {
         if (webhookUrl.isEmpty()) return
         try {
-            val restTemplate = RestTemplate()
             val request = createRequest(masterUserId, villageId, message)
             val formHeaders = HttpHeaders()
             formHeaders.contentType = MediaType.APPLICATION_JSON

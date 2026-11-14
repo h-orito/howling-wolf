@@ -54,7 +54,7 @@ MySQL Database
 - `domain/model/` - Rich domain entities with business logic
 - `domain/service/` - Domain rules (say/, vote/, ability/, skill/, etc.)
 - `infrastructure/datasource/` - DBFlute-based data access
-- `infrastructure/repository/` - External integrations (Twitter, Slack, Discord)
+- `infrastructure/repository/` - External integrations (Twitter, Discord)
 - `fw/` - Framework concerns (security, config, exceptions)
 - `com/ort/dbflute/` - Auto-generated DBFlute code (do not edit manually)
 
@@ -86,7 +86,7 @@ Firebase Admin SDK validates JWT tokens. See `fw/security/HowlingWolfAuthenticat
 Key env vars for production:
 - `MYSQL_HOST`, `HOWLING_WOLF_DB_NAME`, `HOWLING_WOLF_DB_USERNAME`, `HOWLING_WOLF_DB_PASSWORD`
 - `HOWLING_WOLF_FIREBASE_ADMINSDK_PATH`, `HOWLING_WOLF_FIREBASE_DATABASE_URL`
-- `SLACK_TOKEN`, `HOWLING_WOLF_DISCORD_WEBHOOK_URL`
+- `HOWLING_WOLF_DISCORD_WEBHOOK_URL`
 
 ## Code Conventions
 
